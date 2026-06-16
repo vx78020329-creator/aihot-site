@@ -82,17 +82,17 @@ app.get('/api/stats', (req, res) => {
 });
 
 // ── API: 手动采集 ──
-app.post('/api/collect', async (req, res) => {
-  try { const r = await collectAll(); res.json({ ok: true, ...r }); }
-  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
+app.post('/api/collect', (req, res) => {
+  // 后台异步执行，立即返回
+  res.json({ ok: true, message: 'collecting in background' });
+  collectAll().then(r => {
+    if (r?.newItems?.length > 0 && global._wss) {
+      const payload = JSON.stringify({ type: 'new_items', items: r.newItems.map(i => ({ id:i.id, title:i.title })) });
+      global._wss.clients.forEach(c => { if (c.readyState === 1) c.send(payload); });
+    }
+    console.log('[Collect] Done: ' + r.newItems.length + ' new');
+  }).catch(e => console.error('[Collect]', e));
 });
-
-// ── RSS Feed ──
-function buildRSS(title, desc, items) {
-  const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0">\n<channel>\n<title>${esc(title)}</title>\n<description>${esc(desc)}</description>\n`;
-  for (const it of items) {
-    xml += `<item><title>${esc(it.title)}</title><link>${esc(it.link)}</link><description>${esc(it.summary)}</description>`;
     if (it.published_at) xml += `<pubDate>${new Date(it.published_at).toUTCString()}</pubDate>`;
     xml += `<category>${esc(it.category)}</category></item>\n`;
   }

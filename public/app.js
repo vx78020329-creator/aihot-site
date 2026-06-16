@@ -155,8 +155,7 @@
     $('#btn-share').onclick=shareItem;
     document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#detail-overlay').classList.contains('open'))closeDetail();else if(sidebarOpen)closeSidebar()}});
     $('#menu-toggle').onclick=toggleSidebar;
-    $('#sidebar-overlay').onclick=closeSidebar;
-    $('#btn-collect').onclick=async()=>{const b=$('#btn-collect');b.disabled=true;b.innerHTML='<div class="spinner" style="width:14px;height:14px;border-width:2px"></div>';try{const r=await fetch('/api/collect',{method:'POST'});const d=await r.json();if(d.ok){b.textContent='✓ +'+(d.newItems?.length||0);loadList();loadStats()}}catch{b.textContent='失败'}setTimeout(()=>{b.innerHTML='';b.textContent='刷新';b.disabled=false},2500)};
+    $('#sidebar-overlay').onclick=closeSidebar;    $('#btn-collect').onclick=async()=>{const b=$('#btn-collect');b.disabled=true;b.textContent='�ɼ���...';try{fetch('/api/collect',{method:'POST'})}catch{}setTimeout(()=>{b.textContent='ˢ��';b.disabled=false},8000);setTimeout(()=>{loadList();loadStats()},12000)};
     setInterval(loadStats,60000);
   });
 })();
