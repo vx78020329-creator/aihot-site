@@ -1,32 +1,24 @@
-{
+﻿{
   "name": "aihot-site",
-  "version": "1.0.0",
-  "description": "AI Hot - Real-time AI news aggregation site with auto-translation",
+  "version": "2.0.0",
+  "description": "Global Hot News Aggregator - Real-time news collection with on-site reading",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
   },
-  "keywords": [
-    "ai",
-    "news",
-    "aggregator",
-    "rss",
-    "websocket"
-  ],
+  "keywords": ["news", "aggregator", "rss", "websocket", "global"],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@vitalets/google-translate-api": "^9.2.1",
     "better-sqlite3": "^12.11.1",
+    "cheerio": "^1.0.0",
     "express": "^5.2.1",
     "node-cron": "^4.2.1",
     "rss-parser": "^3.13.0",
-    "translate": "^3.0.1",
     "ws": "^8.21.0"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "repository": ""
+  }
 }

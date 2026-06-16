@@ -1,310 +1,294 @@
-const db = require('./db');
+﻿const RSSParser = require('rss-parser');
+const cheerio = require('cheerio');
+const { db, stmts } = require('./db');
 const sources = require('./sources');
-const RSSParser = require('rss-parser');
-const crypto = require('crypto');
-const https = require('https');
-const http = require('http');
-// Using MyMemory API for translation (free, works in China)
 
-const parser = new RSSParser({ timeout: 15000, headers: { 'User-Agent': 'AIHot/1.0' } });
+const parser = new RSSParser({ timeout: 15000 });
 
-function normalize(str) {
-  return (str || '').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
+// ── 工具函数 ──
+function stripHtml(html) {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 }
 
-function similarity(a, b) {
-  if (!a || !b) return 0;
-  const freqA = {}, freqB = {};
-  for (const c of a) freqA[c] = (freqA[c] || 0) + 1;
-  for (const c of b) freqB[c] = (freqB[c] || 0) + 1;
-  let overlap = 0;
-  for (const c in freqA) {
-    if (freqB[c]) overlap += Math.min(freqA[c], freqB[c]);
-  }
-  return overlap / Math.max(a.length, b.length);
+function truncate(text, len = 500) {
+  if (!text) return '';
+  return text.length > len ? text.slice(0, len) + '...' : text;
 }
 
-function makeId(title, link) {
-  return crypto.createHash('md5').update((title || '') + (link || '')).digest('hex');
+function similar(a, b) {
+  if (!a || !b) return false;
+  a = a.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
+  b = b.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
+  if (a === b) return true;
+  const shorter = Math.min(a.length, b.length);
+  if (shorter < 8) return false;
+  let match = 0;
+  for (let i = 0; i < shorter; i++) { if (a[i] === b[i]) match++; }
+  return match / shorter > 0.75;
 }
 
-function detectCategory(text) {
-  const t = (text || '').toLowerCase();
-  if (/paper|arxiv|study|research|论文|研究|benchmark|preprint/.test(t)) return '论文';
-  if (/model|gpt|llm|claude|gemini|llama|mistral|模型|大模型|transformer|diffusion|qwen/.test(t)) return '模型';
-  if (/company|startup|funding|acquisition|industry|公司|融资|行业|收购|估值/.test(t)) return '行业';
-  if (/tutorial|how.to|guide|tips|教程|技巧|实践|入门|实战/.test(t)) return '技巧';
-  if (/product|launch|release|app|api|tool|产品|发布|上线|开源/.test(t)) return '产品';
-  return '产品';
+function scoreItem(item) {
+  let s = 50;
+  if (item.title && item.title.length > 10) s += 10;
+  if (item.content && item.content.length > 200) s += 15;
+  if (item.summary && item.summary.length > 50) s += 10;
+  if (item.category === 'AI') s += 5;
+  if (item.category === '世界') s += 5;
+  if (item.category === '科学') s += 3;
+  return Math.min(100, s);
 }
 
-function timeDecay(publishedAt) {
-  if (!publishedAt) return 0.5;
-  const hours = (Date.now() - new Date(publishedAt).getTime()) / 3600000;
-  if (hours < 0) return 1;
-  return Math.exp(-hours / 72);
-}
-
-function fetchUrl(url, options = {}) {
-  return new Promise((resolve, reject) => {
-    const mod = url.startsWith('https') ? https : http;
-    const req = mod.get(url, { headers: { 'User-Agent': 'AIHot/1.0', ...options.headers }, timeout: 15000 }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return fetchUrl(res.headers.location, options).then(resolve).catch(reject);
+// ── 全文内容抓取 ──
+async function fetchFullContent(url) {
+  if (!url) return { content: '', image: '' };
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(12000),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
       }
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve(data));
     });
-    req.on('error', reject);
-    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
-  });
-}
+    if (!res.ok) return { content: '', image: '' };
+    const html = await res.text();
+    const $ = cheerio.load(html);
 
-async function collectRSS(feedList) {
-  const items = [];
-  for (const feed of feedList) {
-    try {
-      const parsed = await parser.parseURL(feed.url);
-      for (const item of (parsed.items || [])) {
-        items.push({
-          title: (item.title || '').trim(),
-          link: item.link || '',
-          summary: (item.contentSnippet || item.content || item.summary || '').substring(0, 500).replace(/<[^>]+>/g, '').trim(),
-          source_name: feed.name,
-          source_type: 'rss',
-          published_at: item.isoDate || item.pubDate || null
+    // 移除无关元素
+    $('script, style, nav, header, footer, aside, .ad, .ads, .sidebar, .comment, .related, noscript, iframe, .recommend').remove();
+
+    // 提取主图
+    let image = $('meta[property="og:image"]').attr('content') || '';
+    if (!image) image = $('article img, .content img, main img').first().attr('src') || '';
+
+    // 多种选择器提取正文
+    const selectors = [
+      'article', '.article-content', '.post-content', '.entry-content',
+      '.content-body', '.story-body', '.article-body', 'main .content',
+      '[itemprop="articleBody"]', '.RichContent-inner', '.Post-RichTextContainer',
+      '.article__body', '.story__body', '.post-body'
+    ];
+
+    let content = '';
+    for (const sel of selectors) {
+      const el = $(sel);
+      if (el.length && el.text().trim().length > 100) {
+        const paragraphs = [];
+        el.find('p, h2, h3, h4, blockquote, li').each((_, e) => {
+          const t = $(e).text().trim();
+          if (t.length > 10) paragraphs.push(t);
         });
+        if (paragraphs.length > 2) { content = paragraphs.join('\n\n'); break; }
       }
-      db.prepare('UPDATE sources SET last_fetched = ? WHERE name = ?').run(new Date().toISOString(), feed.name);
-    } catch (e) {
-      console.error('[RSS] ' + feed.name + ': ' + e.message);
     }
-  }
-  return items;
-}
 
-async function collectHN() {
-  const cfg = sources.hackernews;
-  if (!cfg.enabled) return [];
-  const items = [];
-  try {
-    const topIds = JSON.parse(await fetchUrl('https://hacker-news.firebaseio.com/v0/topstories.json'));
-    const topN = topIds.slice(0, cfg.top_n);
-    const results = await Promise.allSettled(topN.map(id => fetchUrl('https://hacker-news.firebaseio.com/v0/item/' + id + '.json')));
-    for (const r of results) {
-      if (r.status !== 'fulfilled') continue;
-      const item = JSON.parse(r.value);
-      if (!item || !item.title) continue;
-      const titleLower = item.title.toLowerCase();
-      const hasKeyword = cfg.keywords.some(kw => titleLower.includes(kw));
-      if (!hasKeyword && (item.score || 0) < cfg.min_score) continue;
-      items.push({
-        title: item.title.trim(),
-        link: item.url || 'https://news.ycombinator.com/item?id=' + item.id,
-        summary: item.text ? item.text.substring(0, 500).replace(/<[^>]+>/g, '').trim() : '',
-        source_name: 'Hacker News',
-        source_type: 'hn',
-        published_at: item.time ? new Date(item.time * 1000).toISOString() : null
+    // 降级：所有 <p>
+    if (!content) {
+      const paragraphs = [];
+      $('p').each((_, e) => {
+        const t = $(e).text().trim();
+        if (t.length > 20) paragraphs.push(t);
       });
+      content = paragraphs.join('\n\n');
     }
-  } catch (e) {
-    console.error('[HN] ' + e.message);
+
+    if (!content) content = truncate(stripHtml($('body').html() || ''), 2000);
+    return { content: truncate(content, 3000), image };
+  } catch {
+    return { content: '', image: '' };
   }
-  return items;
 }
 
-async function collectReddit() {
-  const items = [];
-  for (const sub of sources.reddit) {
-    if (!sub.enabled) continue;
-    try {
-      const url = 'https://www.reddit.com/r/' + sub.name + '/hot.json?limit=' + (sub.limit || 25);
-      const data = JSON.parse(await fetchUrl(url, { headers: { 'User-Agent': 'AIHot/1.0' } }));
-      for (const child of (data && data.data && data.data.children || [])) {
-        const post = child.data;
-        if (post.stickied) continue;
-        items.push({
-          title: (post.title || '').trim(),
-          link: post.url || 'https://reddit.com' + post.permalink,
-          summary: (post.selftext || '').substring(0, 500).trim(),
-          source_name: 'r/' + sub.name,
-          source_type: 'reddit',
-          published_at: post.created_utc ? new Date(post.created_utc * 1000).toISOString() : null
-        });
-      }
-    } catch (e) {
-      console.error('[Reddit] r/' + sub.name + ': ' + e.message);
-    }
-  }
-  return items;
-}
-
-async function collectArxiv() {
-  const cfg = sources.arxiv;
-  if (!cfg.enabled) return [];
-  const items = [];
-  try {
-    const catQuery = cfg.categories.map(c => 'cat:' + c).join('+OR+');
-    const url = 'http://export.arxiv.org/api/query?search_query=' + catQuery + '&sortBy=submittedDate&sortOrder=descending&max_results=' + cfg.max_results;
-    const xml = await fetchUrl(url);
-    const entries = xml.split('<entry>').slice(1);
-    for (const entry of entries) {
-      const title = (entry.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '';
-      const link = (entry.match(/<id>([\s\S]*?)<\/id>/) || [])[1] || '';
-      const summary = (entry.match(/<summary>([\s\S]*?)<\/summary>/) || [])[1] || '';
-      const published = (entry.match(/<published>([\s\S]*?)<\/published>/) || [])[1] || '';
-      const cleanTitle = title.replace(/\s+/g, ' ').trim();
-      if (!cleanTitle) continue;
-      items.push({
-        title: cleanTitle,
-        link: (link || '').trim(),
-        summary: summary.replace(/\s+/g, ' ').trim().substring(0, 500),
-        source_name: 'arXiv',
-        source_type: 'arxiv',
-        published_at: (published || '').trim() || null
-      });
-    }
-  } catch (e) {
-    console.error('[arXiv] ' + e.message);
-  }
-  return items;
-}
-
- async function collectGitHub() {
-  const cfg = sources.github;
-  if (!cfg || !cfg.enabled) return [];
-  const items = [];
-  try {
-    const data = JSON.parse(await fetchUrl(cfg.trending_url));
-    for (const repo of (data.items || [])) {
-      items.push({
-        title: repo.full_name + ': ' + (repo.description || '').substring(0, 100),
-        link: repo.html_url,
-        summary: '? ' + repo.stargazers_count + ' stars · ' + (repo.description || ''),
-        source_name: 'GitHub Trending',
-        source_type: 'github',
-        published_at: repo.updated_at
-      });
-    }
-  } catch (e) {
-    console.error('[GitHub] ' + e.message);
-  }
-  return items;
-}
-function isEnglish(text) {
-  if (!text) return false;
-  const asciiChars = text.replace(/[^\x00-\x7F]/g, '').length;
-  return asciiChars / text.length > 0.5;
-}
+// ── 翻译：多后端容错 ──
+let translateFailCount = 0;
 
 async function translateToZh(text) {
-  if (!text || !isEnglish(text)) return text;
+  if (!text || text.length < 3) return text;
+  // 如果连续失败太多次，跳过翻译
+  if (translateFailCount >= 5) return text;
+
+  // 后端 1: MyMemory
   try {
-    const encoded = encodeURIComponent(text.substring(0, 500));
-    const url = 'https://api.mymemory.translated.net/get?q=' + encoded + '&langpair=en|zh-CN';
-    const res = await fetch(url);
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 450))}&langpair=en|zh-CN`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
     const data = await res.json();
-    if (data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
-      return data.responseData.translatedText;
-    }
-    return text;
-  } catch (e) {
-    return text;
-  }
-}
-
-async function translateItems(items) {
-  const engItems = items.filter(i => isEnglish(i.title));
-  console.log('[Translate] ' + engItems.length + ' English items to translate');
-  for (let i = 0; i < engItems.length; i++) {
-    const item = engItems[i];
-    item.title = await translateToZh(item.title);
-    if (item.summary) {
-      item.summary = await translateToZh(item.summary);
-    }
-    if ((i + 1) % 20 === 0) {
-      console.log('[Translate] Progress: ' + (i + 1) + '/' + engItems.length);
-    }
-  }
-  console.log('[Translate] Done');
-}
-async function collectAll() {
-  console.log('[Collector] Starting at ' + new Date().toISOString());
-  const allItems = [];
-
-  const rssFeeds = [...sources.rss_en, ...sources.rss_cn, ...sources.rss_blogs];
-  for (const feed of rssFeeds) {
-    db.prepare('INSERT OR IGNORE INTO sources (name, type, url) VALUES (?, ?, ?)').run(feed.name, 'rss', feed.url);
-  }
-
-  const [rss, hn, reddit, arxiv, github] = await Promise.all([
-    collectRSS(rssFeeds),
-    collectHN(),
-    collectReddit(),
-    collectArxiv(),
-    collectGitHub()
-  ]);
-
-  allItems.push(...rss, ...hn, ...reddit, ...arxiv, ...github);
-  console.log('[Collector] Raw: ' + allItems.length);
-
-  const unique = [];
-  const normTitles = [];
-  for (const item of allItems) {
-    if (!item.title || !item.link) continue;
-    const norm = normalize(item.title);
-    if (norm.length < 3) continue;
-    let isDup = false;
-    for (let i = 0; i < normTitles.length; i++) {
-      if (similarity(norm, normTitles[i]) > 0.7) {
-        unique[i].source_count = (unique[i].source_count || 1) + 1;
-        isDup = true;
-        break;
+    if (data.responseStatus === 200 && data.responseData?.translatedText) {
+      const t = data.responseData.translatedText;
+      if (t.toLowerCase() !== text.toLowerCase() && !t.includes('YOU USED ALL AVAILABLE')) {
+        translateFailCount = 0;
+        return t;
       }
     }
-    if (!isDup) {
-      item.source_count = 1;
-      normTitles.push(norm);
-      unique.push(item);
+  } catch {}
+
+  // 后端 2: Google Translate (unofficial)
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q=${encodeURIComponent(text.slice(0, 300))}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const data = await res.json();
+    if (data && data[0]) {
+      const t = data[0].map(s => s[0]).join('');
+      if (t) { translateFailCount = 0; return t; }
+    }
+  } catch {}
+
+  translateFailCount++;
+  return text;
+}
+
+// ── RSS 采集 ──
+async function collectRSS(src) {
+  const items = [];
+  try {
+    const feed = await parser.parseURL(src.url);
+    for (const entry of (feed.items || []).slice(0, 15)) {
+      if (!entry.title) continue;
+      const link = entry.link || entry.guid || '';
+      const rssSummary = stripHtml(entry.contentSnippet || entry.content || entry.summary || '');
+      items.push({
+        link, title: entry.title.trim(),
+        summary: truncate(rssSummary, 500),
+        source: src.name, category: src.category, lang: src.lang,
+        published_at: entry.isoDate || entry.pubDate || new Date().toISOString(),
+      });
+    }
+  } catch (e) { console.error(`[RSS] ${src.name}: ${e.message}`); }
+  return items;
+}
+
+// ── Hacker News ──
+async function collectHN(src) {
+  const items = [];
+  try {
+    const res = await fetch(`${src.url}/topstories.json`, { signal: AbortSignal.timeout(10000) });
+    const ids = await res.json();
+    for (const id of ids.slice(0, 20)) {
+      try {
+        const r = await fetch(`${src.url}/item/${id}.json`, { signal: AbortSignal.timeout(5000) });
+        const story = await r.json();
+        if (!story?.title) continue;
+        items.push({
+          link: story.url || `https://news.ycombinator.com/item?id=${id}`,
+          title: story.title.trim(),
+          summary: story.text ? truncate(stripHtml(story.text), 300) : '',
+          source: 'Hacker News', category: src.category, lang: 'en',
+          published_at: new Date(story.time * 1000).toISOString(),
+          score: Math.min(100, Math.floor(Math.log2(story.score || 1) * 15)),
+        });
+      } catch {}
+    }
+  } catch (e) { console.error(`[HN] ${e.message}`); }
+  return items;
+}
+
+// ── Reddit ──
+async function collectReddit(src) {
+  const items = [];
+  try {
+    const res = await fetch(`https://www.reddit.com/r/${src.subreddit}/hot.json?limit=15`, {
+      signal: AbortSignal.timeout(10000),
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; HotNewsBot/1.0)' }
+    });
+    const data = await res.json();
+    for (const child of (data?.data?.children || [])) {
+      const post = child.data;
+      if (!post.title || post.stickied) continue;
+      items.push({
+        link: post.url?.startsWith('/') ? `https://reddit.com${post.url}` : post.url,
+        title: post.title.trim(),
+        summary: truncate(stripHtml(post.selftext || ''), 300),
+        source: `Reddit r/${src.subreddit}`, category: src.category, lang: 'en',
+        published_at: new Date(post.created_utc * 1000).toISOString(),
+        score: Math.min(100, Math.floor(Math.log2(post.score || 1) * 12)),
+      });
+    }
+  } catch (e) { console.error(`[Reddit] r/${src.subreddit}: ${e.message}`); }
+  return items;
+}
+
+// ── 主采集流程 ──
+async function collectAll() {
+  console.log(`[Collector] Starting at ${new Date().toISOString()}`);
+  translateFailCount = 0; // 重置翻译失败计数
+  const raw = [];
+  const batchSize = 4;
+
+  for (let i = 0; i < sources.length; i += batchSize) {
+    const batch = sources.slice(i, i + batchSize);
+    const results = await Promise.allSettled(
+      batch.map(s => {
+        if (s.type === 'hn') return collectHN(s);
+        if (s.type === 'reddit') return collectReddit(s);
+        return collectRSS(s);
+      })
+    );
+    for (const r of results) {
+      if (r.status === 'fulfilled') raw.push(...r.value);
     }
   }
-  console.log('[Collector] Unique: ' + unique.length);
 
-  await translateItems(unique);
+  console.log(`[Collector] Raw: ${raw.length}`);
 
+  // 去重
+  const seen = new Map();
+  const unique = [];
+  for (const item of raw) {
+    const key = item.link || item.title;
+    if (seen.has(key)) continue;
+    let dup = false;
+    for (const [k] of seen) {
+      if (similar(item.title, k)) { dup = true; break; }
+    }
+    if (!dup) { seen.set(key, true); unique.push(item); }
+  }
+  console.log(`[Collector] Unique: ${unique.length}`);
+
+  // 过滤已有
+  const newItems = [];
   for (const item of unique) {
-    item.category = detectCategory(item.title + ' ' + (item.summary || ''));
-    item.score = (item.source_count || 1) * 10 * timeDecay(item.published_at);
-    item.id = makeId(item.title, item.link);
-    item.dup_group = item.source_count > 1 ? item.id : '';
+    if (item.link) {
+      const row = db.prepare('SELECT id FROM items WHERE link = ?').get(item.link);
+      if (row) continue;
+    }
+    newItems.push(item);
+  }
+  console.log(`[Collector] New: ${newItems.length}`);
+
+  // 抓取全文 + 翻译（限流）
+  const saved = [];
+  for (let i = 0; i < newItems.length && i < 50; i++) {
+    const item = newItems[i];
+    const { content, image } = await fetchFullContent(item.link);
+    item.content = content;
+    item.image_url = image || '';
+
+    // 翻译（英文内容）
+    if (item.lang === 'en') {
+      // 只翻译标题，摘要用原文（节省 API 额度）
+      const tTitle = await translateToZh(item.title);
+      if (tTitle !== item.title) item.title = tTitle;
+      // 摘要：如果太长就不翻译
+      if ((item.summary || '').length < 150) {
+        const tSummary = await translateToZh(item.summary || '');
+        if (tSummary !== item.summary) item.summary = tSummary;
+      }
+    }
+
+    item.score = item.score || scoreItem(item);
+    item.tags = '[]';
+
+    try {
+      const result = stmts.insertItem.run(item);
+      if (result.changes > 0) saved.push(item);
+    } catch {}
   }
 
-  unique.sort((a, b) => b.score - a.score);
-  const curatedIds = new Set(unique.slice(0, 50).map(i => i.id));
+  // 精选
+  db.prepare('UPDATE items SET is_curated = 1 WHERE score >= 70 AND is_curated = 0').run();
 
-  // Track which items are new (not previously in DB)
-  const existingIds = new Set(
-    db.prepare('SELECT id FROM items').all().map(r => r.id)
-  );
-
-  const insert = db.prepare('INSERT OR REPLACE INTO items (id, title, link, summary, source_name, source_type, category, published_at, collected_at, score, source_count, is_curated, dup_group) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-  const tx = db.transaction(() => {
-    for (const item of unique) {
-      insert.run(item.id, item.title, item.link, item.summary || '', item.source_name, item.source_type || 'rss', item.category, item.published_at, new Date().toISOString(), item.score, item.source_count || 1, curatedIds.has(item.id) ? 1 : 0, item.dup_group || '');
-    }
-  });
-  tx();
-
-  const newItems = unique.filter(i => !existingIds.has(i.id)).map(i => ({
-    id: i.id, title: i.title, link: i.link, summary: i.summary,
-    source_name: i.source_name, source_type: i.source_type,
-    category: i.category, published_at: i.published_at,
-    score: i.score, source_count: i.source_count
-  }));
-
-  console.log('[Collector] Saved ' + unique.length + ', curated ' + curatedIds.size + ', new ' + newItems.length);
-  return { total: allItems.length, unique: unique.length, curated: curatedIds.size, newItems };
+  console.log(`[Collector] Saved: ${saved.length}`);
+  return { total: raw.length, unique: unique.length, newItems: saved };
 }
 
 module.exports = { collectAll };

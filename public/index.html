@@ -3,61 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI热点 - AI News Aggregator</title>
+  <title>全球热点 — AIHOT</title>
+  <meta name="description" content="全球热点资讯实时聚合，站内直接阅读">
   <link rel="stylesheet" href="/style.css">
-  <link rel="alternate" type="application/rss+xml" title="AI热点 RSS" href="/feed.xml">
+  <script>
+    (function(){
+      try {
+        var saved = localStorage.getItem('theme-mode');
+        var mode = (saved === 'dark' || saved === 'light' || saved === 'auto') ? saved : 'dark';
+        var actual = mode;
+        if (mode === 'auto') actual = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', actual);
+        document.documentElement.setAttribute('data-theme-mode', mode);
+      } catch(e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
 </head>
 <body>
-  <nav class="sidebar" id="sidebar">
-    <div class="logo">
-      <span class="logo-icon">🔥</span>
-      <span class="logo-text">AI热点</span>
+  <!-- 侧边栏 -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-logo"><span class="brand-ai">Global</span><span class="brand-hot">HOT</span></span>
     </div>
-    <ul class="nav-main">
-      <li class="nav-item active" data-mode="curated"><span class="nav-icon">⭐</span>精选</li>
-      <li class="nav-item" data-mode="all"><span class="nav-icon">📰</span>全部动态</li>
-      <li class="nav-item" data-mode="hot"><span class="nav-icon">🏆</span>热点排名</li>
-    </ul>
-    <div class="nav-divider"></div>
-    <div class="nav-section-title">分类</div>
-    <ul class="nav-cat">
-      <li class="nav-cat-item" data-cat="模型"><span class="cat-dot" style="background:#a855f7"></span>模型</li>
-      <li class="nav-cat-item" data-cat="产品"><span class="cat-dot" style="background:#3b82f6"></span>产品</li>
-      <li class="nav-cat-item" data-cat="行业"><span class="cat-dot" style="background:#f97316"></span>行业</li>
-      <li class="nav-cat-item" data-cat="论文"><span class="cat-dot" style="background:#22c55e"></span>论文</li>
-      <li class="nav-cat-item" data-cat="技巧"><span class="cat-dot" style="background:#eab308"></span>技巧</li>
-    </ul>
-    <div class="nav-divider"></div>
-    <div class="nav-rss">
-      <a href="/feed.xml" target="_blank">📡 RSS 订阅</a>
-    </div>
-  </nav>
-
-  <main class="main">
-    <header class="topbar">
-      <button class="menu-btn" id="menu-btn">☰</button>
-      <div class="search-box">
-        <input type="text" id="search-input" placeholder="搜索 AI 资讯..." autocomplete="off">
+    <nav class="side-nav">
+      <a class="side-link active" data-page="curated" href="#/">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span>精选</span>
+      </a>
+      <a class="side-link" data-page="all" href="#/all">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span>全部动态</span>
+      </a>
+      <a class="side-link" data-page="hot" href="#/hot">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v4l3 3"/></svg>
+        <span>热门</span>
+      </a>
+      <div class="side-divider"></div>
+      <div class="side-label">分类</div>
+      <div id="category-nav"></div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="theme-switcher">
+        <button class="theme-btn" data-mode="dark" title="暗色">🌙</button>
+        <button class="theme-btn" data-mode="light" title="亮色">☀️</button>
+        <button class="theme-btn" data-mode="auto" title="跟随系统">💻</button>
       </div>
-      <button class="collect-btn" id="collect-btn">🔄 采集</button>
+      <div class="sidebar-stats" id="stats-info"></div>
+    </div>
+  </aside>
+
+  <!-- 主内容 -->
+  <main class="main-content" id="main-content">
+    <!-- 顶部栏 -->
+    <header class="top-bar">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="搜索热点..." />
+      </div>
+      <div class="top-right">
+        <span class="ws-status" id="ws-status" title="实时连接状态">●</span>
+        <button class="btn-collect" id="btn-collect" title="手动采集">刷新</button>
+      </div>
     </header>
 
-    <div class="stats-bar" id="stats-bar"></div>
-
-    <div class="content-wrap">
-      <section class="feed-section">
-        <div class="feed-header" id="feed-header">精选</div>
-        <div class="feed-list" id="feed-list">
-          <div class="loading">加载中...</div>
-        </div>
-        <div class="pagination" id="pagination"></div>
-      </section>
-      <aside class="hot-sidebar" id="hot-sidebar">
-        <div class="hot-title">🔥 热点 Top 20</div>
-        <div class="hot-list" id="hot-list"></div>
-      </aside>
+    <!-- 内容区 -->
+    <div class="content-area" id="content-area">
+      <div class="loading" id="loading">加载中...</div>
     </div>
   </main>
+
+  <!-- 详情页遮罩 -->
+  <div class="detail-overlay" id="detail-overlay">
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-header">
+        <button class="detail-back" id="detail-back">← 返回</button>
+        <div class="detail-actions">
+          <a class="detail-ext-link" id="detail-ext-link" href="#" target="_blank" rel="noopener">查看原文 ↗</a>
+        </div>
+      </div>
+      <div class="detail-body" id="detail-body"></div>
+    </div>
+  </div>
 
   <script src="/app.js"></script>
 </body>
