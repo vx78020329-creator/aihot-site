@@ -50,7 +50,7 @@ app.get('/api/items', limiter, (req, res) => {
   const wc = where.length ? 'WHERE ' + where.join(' AND ') : '';
   const total = db.prepare('SELECT COUNT(*) as cnt FROM items ' + wc).get(...params).cnt;
   const items = db.prepare(
-    'SELECT id, title, summary, source, category, lang, image_url, published_at, score, is_curated, source_count FROM items ' + wc + ' ORDER BY score DESC, published_at DESC LIMIT ? OFFSET ?'
+    'SELECT id, title, summary, content, source, category, lang, image_url, published_at, collected_at, score, is_curated, source_count FROM items ' + wc + ' ORDER BY score DESC, published_at DESC LIMIT ? OFFSET ?'
   ).all(...params, l, offset);
 
   res.json({ items, total, page: p, limit: l, pages: Math.ceil(total / l) });
@@ -135,3 +135,4 @@ server.listen(PORT, () => {
   console.log(`Global HOT on http://localhost:${PORT}`);
   collectAll().catch(e => console.error('[Startup]', e));
 });
+
