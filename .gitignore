@@ -1,0 +1,7 @@
+node_modules/
+data.db
+stdout.log
+stderr.log
+*.b64
+*.ps1
+*.bat

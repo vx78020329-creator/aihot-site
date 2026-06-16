@@ -1,0 +1,148 @@
+﻿*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060814;--bg-card:#0d1117;--bg-sidebar:#0a0f1a;--bg-hover:#161b26;
+  --border:#1e293b;--text:#e2e8f0;--text-dim:#64748b;--text-link:#60a5fa;
+  --accent:#3b82f6;--accent-hover:#2563eb;
+  --cat-模型:#a855f7;--cat-论文:#22c55e;--cat-行业:#f97316;--cat-技巧:#eab308;--cat-产品:#3b82f6;
+  --sidebar-w:220px;
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;line-height:1.6;min-height:100vh;display:flex}
+a{color:var(--text-link);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Sidebar */
+.sidebar{
+  position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);
+  background:var(--bg-sidebar);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:16px 0;overflow-y:auto;z-index:100;
+  transition:transform .25s;
+}
+.logo{display:flex;align-items:center;gap:8px;padding:0 16px 16px;font-size:1.4rem;font-weight:700}
+.logo-icon{font-size:1.6rem}
+.nav-main,.nav-cat{list-style:none}
+.nav-item,.nav-cat-item{
+  display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;
+  color:var(--text-dim);transition:all .15s;font-size:.95rem;
+}
+.nav-item:hover,.nav-cat-item:hover{background:var(--bg-hover);color:var(--text)}
+.nav-item.active{color:var(--accent);background:rgba(59,130,246,.1);border-right:3px solid var(--accent)}
+.nav-icon{font-size:1.1rem;width:20px;text-align:center}
+.cat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.nav-cat-item.active-cat{color:var(--text);font-weight:600}
+.nav-divider{height:1px;background:var(--border);margin:12px 16px}
+.nav-section-title{padding:4px 16px;font-size:.75rem;text-transform:uppercase;color:var(--text-dim);letter-spacing:.05em}
+.nav-rss{padding:8px 16px;margin-top:auto}
+.nav-rss a{color:var(--text-dim);font-size:.85rem}
+.nav-rss a:hover{color:var(--accent)}
+
+/* Main */
+.main{margin-left:var(--sidebar-w);flex:1;min-width:0;display:flex;flex-direction:column}
+
+/* Topbar */
+.topbar{
+  position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;
+  padding:10px 20px;background:rgba(6,8,20,.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.menu-btn{display:none;background:none;border:none;color:var(--text);font-size:1.4rem;cursor:pointer;padding:4px 8px}
+.search-box{flex:1;max-width:500px}
+.search-box input{
+  width:100%;padding:8px 14px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg-card);color:var(--text);font-size:.9rem;outline:none;
+}
+.search-box input:focus{border-color:var(--accent)}
+.collect-btn{
+  padding:8px 18px;border-radius:8px;border:none;background:var(--accent);
+  color:#fff;font-size:.9rem;cursor:pointer;white-space:nowrap;
+}
+.collect-btn:hover{background:var(--accent-hover)}
+.collect-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Stats bar */
+.stats-bar{
+  display:flex;gap:20px;padding:10px 20px;border-bottom:1px solid var(--border);
+  font-size:.85rem;color:var(--text-dim);flex-wrap:wrap;
+}
+.stat-item{display:flex;align-items:center;gap:4px}
+.stat-val{color:var(--text);font-weight:600}
+
+/* Content */
+.content-wrap{display:flex;gap:0;flex:1;padding:0}
+.feed-section{flex:1;min-width:0;padding:16px 20px}
+.feed-header{font-size:1.2rem;font-weight:700;margin-bottom:14px}
+
+/* Feed item */
+.feed-item{
+  background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+  padding:14px 18px;margin-bottom:10px;transition:border-color .15s;
+}
+.feed-item:hover{border-color:var(--accent)}
+.feed-title{font-size:1rem;font-weight:600;margin-bottom:6px;line-height:1.4}
+.feed-title a{color:var(--text)}
+.feed-title a:hover{color:var(--accent)}
+.feed-summary{color:var(--text-dim);font-size:.85rem;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.feed-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.78rem;color:var(--text-dim)}
+.feed-cat{
+  display:inline-block;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600;
+  color:#fff;
+}
+.feed-cat[data-cat="模型"]{background:var(--cat-模型)}
+.feed-cat[data-cat="论文"]{background:var(--cat-论文)}
+.feed-cat[data-cat="行业"]{background:var(--cat-行业)}
+.feed-cat[data-cat="技巧"]{background:var(--cat-技巧)}
+.feed-cat[data-cat="产品"]{background:var(--cat-产品)}
+.feed-source{opacity:.7}
+.feed-count{
+  display:inline-flex;align-items:center;gap:3px;
+  background:rgba(59,130,246,.15);color:var(--accent);padding:1px 7px;border-radius:4px;font-size:.72rem;font-weight:600;
+}
+
+/* Hot sidebar */
+.hot-sidebar{
+  width:280px;flex-shrink:0;border-left:1px solid var(--border);
+  padding:16px;overflow-y:auto;max-height:calc(100vh - 120px);position:sticky;top:60px;
+}
+.hot-title{font-size:1rem;font-weight:700;margin-bottom:12px}
+.hot-item{
+  display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);
+  font-size:.82rem;cursor:pointer;
+}
+.hot-item:hover .hot-item-title{color:var(--accent)}
+.hot-rank{
+  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  border-radius:4px;font-size:.72rem;font-weight:700;flex-shrink:0;
+}
+.hot-rank.top1{background:#ef4444;color:#fff}
+.hot-rank.top2{background:#f97316;color:#fff}
+.hot-rank.top3{background:#eab308;color:#000}
+.hot-rank.other{background:var(--bg-hover);color:var(--text-dim)}
+.hot-item-title{color:var(--text);line-height:1.3}
+
+/* Pagination */
+.pagination{display:flex;justify-content:center;gap:6px;padding:20px 0}
+.page-btn{
+  padding:6px 12px;border-radius:6px;border:1px solid var(--border);
+  background:var(--bg-card);color:var(--text);cursor:pointer;font-size:.85rem;
+}
+.page-btn:hover{border-color:var(--accent)}
+.page-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.page-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* Loading */
+.loading{text-align:center;padding:40px;color:var(--text-dim)}
+
+/* Responsive */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .menu-btn{display:block}
+  .hot-sidebar{display:none}
+  .content-wrap{flex-direction:column}
+}
+@media(max-width:600px){
+  .topbar{padding:8px 12px;gap:8px}
+  .feed-section{padding:12px}
+  .feed-item{padding:12px}
+}

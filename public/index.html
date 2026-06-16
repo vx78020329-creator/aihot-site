@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI热点 - AI News Aggregator</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="alternate" type="application/rss+xml" title="AI热点 RSS" href="/feed.xml">
+</head>
+<body>
+  <nav class="sidebar" id="sidebar">
+    <div class="logo">
+      <span class="logo-icon">🔥</span>
+      <span class="logo-text">AI热点</span>
+    </div>
+    <ul class="nav-main">
+      <li class="nav-item active" data-mode="curated"><span class="nav-icon">⭐</span>精选</li>
+      <li class="nav-item" data-mode="all"><span class="nav-icon">📰</span>全部动态</li>
+      <li class="nav-item" data-mode="hot"><span class="nav-icon">🏆</span>热点排名</li>
+    </ul>
+    <div class="nav-divider"></div>
+    <div class="nav-section-title">分类</div>
+    <ul class="nav-cat">
+      <li class="nav-cat-item" data-cat="模型"><span class="cat-dot" style="background:#a855f7"></span>模型</li>
+      <li class="nav-cat-item" data-cat="产品"><span class="cat-dot" style="background:#3b82f6"></span>产品</li>
+      <li class="nav-cat-item" data-cat="行业"><span class="cat-dot" style="background:#f97316"></span>行业</li>
+      <li class="nav-cat-item" data-cat="论文"><span class="cat-dot" style="background:#22c55e"></span>论文</li>
+      <li class="nav-cat-item" data-cat="技巧"><span class="cat-dot" style="background:#eab308"></span>技巧</li>
+    </ul>
+    <div class="nav-divider"></div>
+    <div class="nav-rss">
+      <a href="/feed.xml" target="_blank">📡 RSS 订阅</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menu-btn">☰</button>
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="搜索 AI 资讯..." autocomplete="off">
+      </div>
+      <button class="collect-btn" id="collect-btn">🔄 采集</button>
+    </header>
+
+    <div class="stats-bar" id="stats-bar"></div>
+
+    <div class="content-wrap">
+      <section class="feed-section">
+        <div class="feed-header" id="feed-header">精选</div>
+        <div class="feed-list" id="feed-list">
+          <div class="loading">加载中...</div>
+        </div>
+        <div class="pagination" id="pagination"></div>
+      </section>
+      <aside class="hot-sidebar" id="hot-sidebar">
+        <div class="hot-title">🔥 热点 Top 20</div>
+        <div class="hot-list" id="hot-list"></div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
