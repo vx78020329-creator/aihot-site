@@ -188,7 +188,7 @@ async function collectReddit(src) {
   try {
     const res = await fetch(`https://www.reddit.com/r/${src.subreddit}/hot.json?limit=15`, {
       signal: AbortSignal.timeout(10000),
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; HotNewsBot/1.0)' }
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36' }
     });
     const data = await res.json();
     for (const child of (data?.data?.children || [])) {
@@ -292,3 +292,4 @@ async function collectAll() {
 }
 
 module.exports = { collectAll };
+
