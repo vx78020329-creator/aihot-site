@@ -5,3 +5,9 @@ stderr.log
 *.b64
 *.ps1
 *.bat
+
+railway.exe
+railway.tar.gz
+data.db-shm
+data.db-wal
+data.db

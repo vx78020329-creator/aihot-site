@@ -7,7 +7,7 @@ const http = require('http');
 const { WebSocketServer } = require('ws');
 
 const app = express();
-const PORT = 3456;
+const PORT = process.env.PORT || 3456;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -92,7 +92,7 @@ function buildRSS(title, description, items) {
 
 app.get('/feed.xml', (req, res) => {
   const items = db.prepare('SELECT * FROM items WHERE is_curated = 1 ORDER BY score DESC LIMIT 50').all();
-  res.type('application/rss+xml').send(buildRSS('AI热点 - 精选', 'AI curated news feed', items));
+  res.type('application/rss+xml').send(buildRSS('AI热点 - 精�?, 'AI curated news feed', items));
 });
 
 app.get('/feed/all.xml', (req, res) => {
