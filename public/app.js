@@ -103,7 +103,7 @@
   function closeDetail(){$('#detail-overlay').classList.remove('open');document.body.style.overflow='';if(location.hash.startsWith('#/item/'))history.back()}
 
   // ── 分享 ──
-  function shareItem(){const t=document.querySelector('.detail-title')?.textContent||'';const l=$('#detail-ext-link')?.href||location.href;if(navigator.share){navigator.share({title:t,url:l}).catch(()=>{})}else{navigator.clipboard?.writeText(l);const b=$('#btn-share');b.textContent='已复制';setTimeout(()=>{b.textContent='分享'},1500)}}
+  function shareItem(){const t=document.querySelector('.detail-title')?.textContent||'';const l=$('#detail-ext-link')?.href||location.href;if(navigator.share){navigator.share({title:t,url:l}).catch(()=>{})}else{navigator.clipboard?.writeText(l);const b=$('#btn-share');b.textContent='Refresh';setTimeout(()=>{b.textContent='分享'},1500)}}
 
   // ── WebSocket ──
   function connectWS(){
@@ -155,7 +155,7 @@
     $('#btn-share').onclick=shareItem;
     document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#detail-overlay').classList.contains('open'))closeDetail();else if(sidebarOpen)closeSidebar()}});
     $('#menu-toggle').onclick=toggleSidebar;
-    $('#sidebar-overlay').onclick=closeSidebar;    $('#btn-collect').onclick=async()=>{const b=$('#btn-collect');b.disabled=true;b.textContent='�ɼ���...';try{fetch('/api/collect',{method:'POST'})}catch{}setTimeout(()=>{b.textContent='ˢ��';b.disabled=false},8000);setTimeout(()=>{loadList();loadStats()},12000)};
+    $('#btn-collect').onclick=async()=>{const b=$('#btn-collect');b.disabled=true;b.textContent='Collecting...';try{fetch('/api/collect',{method:'POST'})}catch{}setTimeout(()=>{b.textContent='Refresh';b.disabled=false},8000);setTimeout(()=>{loadList();loadStats()},12000)};
     document.addEventListener("visibilitychange",()=>{if(!document.hidden){loadList();loadStats()}});
     setInterval(()=>{loadList()},60000);
     setInterval(loadStats,60000);
