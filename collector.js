@@ -3,7 +3,7 @@ const cheerio = require('cheerio');
 const { db, stmts } = require('./db');
 const sources = require('./sources');
 
-const parser = new RSSParser({ timeout: 15000 });
+const parser = new RSSParser({ timeout: 8000 });
 
 function stripHtml(html) {
   if (!html) return '';
@@ -21,7 +21,7 @@ function similar(a, b) {
   if (s < 8) return false;
   let m = 0;
   for (let i = 0; i < s; i++) { if (a[i] === b[i]) m++; }
-  return m / s > 0.75;
+  return m / s > 0.85;
 }
 function scoreItem(item) {
   let s = 20;
@@ -44,7 +44,7 @@ async function fetchFullContent(url) {
   if (!url) return { content: '', image: '' };
   try {
     const res = await fetch(url, {
-      signal: AbortSignal.timeout(12000),
+      signal: AbortSignal.timeout(6000),
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'text/html', 'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8' }
     });
     if (!res.ok) return { content: '', image: '' };
@@ -209,7 +209,7 @@ async function collectAll() {
 
   // 抓取全文 + 翻译（提高上限到 120）
   const saved = [];
-  for (let i = 0; i < newItems.length && i < 120; i++) {
+  for (let i = 0; i < newItems.length && i < 200; i++) {
     const item = newItems[i];
     // 并行抓取全文
     const { content, image } = await fetchFullContent(item.link);

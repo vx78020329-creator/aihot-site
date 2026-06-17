@@ -64,8 +64,10 @@ app.get('/api/items/:id', limiter, (req, res) => {
 
 app.get('/api/last-update', (req, res) => {
   const row = db.prepare("SELECT MAX(collected_at) as last FROM items").get();
-  const count = db.prepare("SELECT COUNT(*) as cnt FROM items WHERE collected_at > datetime('now', '-5 minutes')").get();
-  res.json({ lastUpdate: row.last || '', recentCount: count.cnt });
+  const count5m = db.prepare("SELECT COUNT(*) as cnt FROM items WHERE collected_at > datetime('now', '-5 minutes')").get();
+  const count1h = db.prepare("SELECT COUNT(*) as cnt FROM items WHERE collected_at > datetime('now', '-1 hour')").get();
+  const total = db.prepare("SELECT COUNT(*) as cnt FROM items").get();
+  res.json({ lastUpdate: row.last || '', recentCount5m: count5m.cnt, recentCount1h: count1h.cnt, total: total.cnt, serverTime: new Date().toISOString(), collecting: isCollecting, lastCollect: lastCollectTime || '' });
 });
 
 app.get('/api/hot', (req, res) => {
@@ -102,6 +104,15 @@ function buildRSS(title, desc, items) {
   return xml + '</channel>\n</rss>';
 }
 
+app.get('/api/trending', (req, res) => {
+  const items = db.prepare('SELECT id, title, summary, source, category, published_at, collected_at, score, image_url FROM items WHERE score >= 50 ORDER BY score DESC, collected_at DESC LIMIT 30').all();
+  res.json({ items, serverTime: new Date().toISOString() });
+});
+
+app.get('/api/status', (req, res) => {
+  res.json({ collecting: isCollecting, lastCollect: lastCollectTime || '', uptime: process.uptime(), serverTime: new Date().toISOString() });
+});
+
 app.get('/feed.xml', (req, res) => {
   res.type('application/rss+xml').send(buildRSS('Global Hot - Curated','Curated', db.prepare('SELECT * FROM items WHERE is_curated=1 ORDER BY score DESC LIMIT 50').all()));
 });
@@ -122,23 +133,37 @@ wss.on('connection', ws => {
 });
 global._wss = wss;
 
-cron.schedule('*/1 * * * *', () => {
-  console.log('[Cron] Collecting...');
-  collectAll().then(r => {
+let lastCollectTime = null;
+let isCollecting = false;
+
+async function runCollect() {
+  if (isCollecting) { console.log('[Cron] Skip - already collecting'); return; }
+  isCollecting = true;
+  const start = Date.now();
+  try {
+    const r = await collectAll();
+    lastCollectTime = new Date().toISOString();
+    const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+    console.log('[Cron] Done in ' + elapsed + 's, new: ' + (r ? r.newItems.length : 0));
     if (r && r.newItems && r.newItems.length > 0) {
-      const payload = JSON.stringify({ type: 'new_items', items: r.newItems.map(i => ({ id:i.id, title:i.title, source:i.source, category:i.category, score:i.score })) });
+      const payload = JSON.stringify({ type: 'new_items', count: r.newItems.length, items: r.newItems.map(i => ({ id:i.id, title:i.title, source:i.source, category:i.category, score:i.score })) });
       wss.clients.forEach(c => { if (c.readyState === 1) c.send(payload); });
-      console.log('[WS] Pushed ' + r.newItems.length);
     }
-  }).catch(e => console.error('[Cron]', e));
-});
+    // Push heartbeat so frontend knows server is alive
+    const heartbeat = JSON.stringify({ type: 'heartbeat', lastCollect: lastCollectTime, newCount: r ? r.newItems.length : 0, serverTime: new Date().toISOString() });
+    wss.clients.forEach(c => { if (c.readyState === 1) c.send(heartbeat); });
+  } catch(e) { console.error('[Cron]', e); }
+  isCollecting = false;
+}
+
+cron.schedule('*/1 * * * *', () => { runCollect(); });
 
 
 // Reset curated status for items below new threshold
 db.prepare('UPDATE items SET is_curated = 0 WHERE score < 60 AND is_curated = 1').run();
 
 // Reset collected_at for items collected more than 6 hours ago (stale data)
-db.prepare("UPDATE items SET collected_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-' || (abs(random()) % 12) || ' hours') WHERE collected_at < strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-6 hours')").run();
+// [FIXED] Removed random timestamp rewriting - was causing "8h ago" for all items
 
 server.listen(PORT, () => {
   console.log('Global HOT on http://localhost:' + PORT);

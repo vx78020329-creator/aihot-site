@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -23,10 +23,10 @@
   </script>
 </head>
 <body>
-  <!-- 移动端侧边栏遮罩 -->
+  <!-- mobile sidebar overlay -->
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-  <!-- 侧边栏 -->
+  <!-- sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <span class="brand-logo"><span class="brand-ai">Global</span><span class="brand-hot">HOT</span></span>
@@ -59,7 +59,7 @@
     </div>
   </aside>
 
-  <!-- 主内容 -->
+  <!-- main content -->
   <main class="main-content" id="main-content">
     <header class="top-bar">
       <button class="menu-toggle" id="menu-toggle">
@@ -70,6 +70,7 @@
         <input type="text" id="search-input" placeholder="搜索热点..." />
       </div>
       <div class="top-right">
+        <div class="live-indicator" id="live-indicator"><span class="live-dot"></span> 实时更新中</div>
         <span class="ws-status" id="ws-status" title="实时连接">●</span>
         <button class="btn-collect" id="btn-collect" title="手动采集">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
@@ -82,7 +83,7 @@
     </div>
   </main>
 
-  <!-- 详情页遮罩 -->
+  <!-- detail overlay -->
   <div class="detail-overlay" id="detail-overlay">
     <div class="detail-panel" id="detail-panel">
       <div class="detail-header">
