@@ -215,7 +215,7 @@ async function collectAll() {
     const { content, image } = await fetchFullContent(item.link);
     item.content = content;
     item.image_url = image || '';
-    // 翻译所有非中文内容（标题+摘要）
+    // 翻译所有非中文内容（标题+摘要+正文前800字）
     if (item.lang && item.lang !== 'zh') {
       const t = await translateToZh(item.title);
       if (t && t !== item.title) item.title = t;
@@ -223,9 +223,11 @@ async function collectAll() {
         const s = await translateToZh(item.summary);
         if (s && s !== item.summary) item.summary = s;
       }
+      if (item.content && item.content.length > 20) {
+        const c = await translateToZh(item.content.slice(0, 800));
+        if (c && c.length > 10) item.content = c + (item.content.length > 800 ? "\n\n" + item.content.slice(800) : "");
+      }
     }
-    item.score = item.score || scoreItem(item);
-    item.collected_at = new Date().toISOString();
     item.tags = '[]';
     try { const r = stmts.insertItem.run(item); if (r.changes > 0) saved.push(item); } catch {}
   }
