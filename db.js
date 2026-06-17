@@ -43,8 +43,8 @@ db.exec(`
 
 const stmts = {
   insertItem: db.prepare(`
-    INSERT OR IGNORE INTO items (link, title, summary, content, source, category, lang, image_url, published_at, score, tags)
-    VALUES (@link, @title, @summary, @content, @source, @category, @lang, @image_url, @published_at, @score, @tags)
+    INSERT OR IGNORE INTO items (link, title, summary, content, source, category, lang, image_url, published_at, collected_at, score, tags)
+    VALUES (@link, @title, @summary, @content, @source, @category, @lang, @image_url, @published_at, @collected_at, @score, @tags)
   `),
   getById: db.prepare('SELECT * FROM items WHERE id = ?'),
   countItems: db.prepare('SELECT COUNT(*) as cnt FROM items'),
