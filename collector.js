@@ -1,4 +1,4 @@
-const RSSParser = require('rss-parser');
+ï»¿const RSSParser = require('rss-parser');
 const cheerio = require('cheerio');
 const { db, stmts } = require('./db');
 const sources = require('./sources');
@@ -34,12 +34,12 @@ function scoreItem(item) {
   if (item.summary && item.summary.length > 100) s += 5;
   if (item.image_url) s += 5;
   if (item.category === 'AI') s += 5;
-  else if (item.category === 'ÊÀ½ç') s += 5;
-  else if (item.category === '¿ÆÑ§') s += 3;
+  else if (item.category === 'ï¿½ï¿½ï¿½ï¿½') s += 5;
+  else if (item.category === 'ï¿½ï¿½Ñ§') s += 3;
   return Math.min(95, s);
 }
 
-// ©¤©¤ È«ÎÄ×¥È¡ ©¤©¤
+// ï¿½ï¿½ï¿½ï¿½ È«ï¿½ï¿½×¥È¡ ï¿½ï¿½ï¿½ï¿½
 async function fetchFullContent(url) {
   if (!url) return { content: '', image: '' };
   try {
@@ -74,7 +74,7 @@ async function fetchFullContent(url) {
   } catch { return { content: '', image: '' }; }
 }
 
-// ©¤©¤ ·­Òë ©¤©¤
+// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 let failCount = 0;
 async function translateToZh(text) {
   if (!text || text.length < 3) return text;
@@ -99,7 +99,7 @@ async function translateToZh(text) {
   return text;
 }
 
-// ©¤©¤ RSS ©¤©¤
+// ï¿½ï¿½ï¿½ï¿½ RSS ï¿½ï¿½ï¿½ï¿½
 async function collectRSS(src) {
   const items = [];
   try {
@@ -117,7 +117,7 @@ async function collectRSS(src) {
   return items;
 }
 
-// ©¤©¤ Hacker News ©¤©¤
+// ï¿½ï¿½ï¿½ï¿½ Hacker News ï¿½ï¿½ï¿½ï¿½
 async function collectHN(src) {
   const items = [];
   try {
@@ -141,7 +141,7 @@ async function collectHN(src) {
   return items;
 }
 
-// ©¤©¤ Reddit (¸ÄÓÃ RSS feed) ©¤©¤
+// ï¿½ï¿½ï¿½ï¿½ Reddit (ï¿½ï¿½ï¿½ï¿½ RSS feed) ï¿½ï¿½ï¿½ï¿½
 async function collectReddit(src) {
   const items = [];
   try {
@@ -168,7 +168,7 @@ async function collectReddit(src) {
   return items;
 }
 
-// ©¤©¤ Ö÷²É¼¯Á÷³Ì ©¤©¤
+// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½É¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 async function collectAll() {
   console.log(`[Collector] Starting at ${new Date().toISOString()}`);
   failCount = 0;
@@ -184,7 +184,7 @@ async function collectAll() {
   }
   console.log(`[Collector] Raw: ${raw.length}`);
 
-  // È¥ÖØ
+  // È¥ï¿½ï¿½
   const seen = new Map();
   const unique = [];
   for (const item of raw) {
@@ -196,7 +196,7 @@ async function collectAll() {
   }
   console.log(`[Collector] Unique: ${unique.length}`);
 
-  // ¹ýÂËÒÑÓÐ
+  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   const newItems = [];
   for (const item of unique) {
     if (item.link) {
@@ -207,26 +207,18 @@ async function collectAll() {
   }
   console.log(`[Collector] New: ${newItems.length}`);
 
-  // ×¥È¡È«ÎÄ + ·­Òë£¨Ìá¸ßÉÏÏÞµ½ 120£©
+  // ×¥È¡È«ï¿½ï¿½ + ï¿½ï¿½ï¿½ë£¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þµï¿½ 120ï¿½ï¿½
   const saved = [];
   for (let i = 0; i < newItems.length && i < 200; i++) {
     const item = newItems[i];
-    // ²¢ÐÐ×¥È¡È«ÎÄ
+    // ï¿½ï¿½ï¿½ï¿½×¥È¡È«ï¿½ï¿½
     const { content, image } = await fetchFullContent(item.link);
     item.content = content;
     item.image_url = image || '';
-    // ·­ÒëËùÓÐ·ÇÖÐÎÄÄÚÈÝ£¨±êÌâ+ÕªÒª+ÕýÎÄÇ°800×Ö£©
+    // Translate title+summary only (fast, skip content to avoid timeout)
     if (item.lang && item.lang !== 'zh') {
-      const t = await translateToZh(item.title);
-      if (t && t !== item.title) item.title = t;
-      if (item.summary) {
-        const s = await translateToZh(item.summary);
-        if (s && s !== item.summary) item.summary = s;
-      }
-      if (item.content && item.content.length > 20) {
-        const c = await translateToZh(item.content.slice(0, 800));
-        if (c && c.length > 10) item.content = c + (item.content.length > 800 ? "\n\n" + item.content.slice(800) : "");
-      }
+      try { const t = await translateToZh(item.title); if (t && t !== item.title) item.title = t; } catch {}
+      try { if (item.summary) { const s = await translateToZh(item.summary); if (s && s !== item.summary) item.summary = s; } } catch {}
     }
     item.tags = '[]';
     try { const r = stmts.insertItem.run(item); if (r.changes > 0) saved.push(item); } catch {}
@@ -237,4 +229,23 @@ async function collectAll() {
   return { total: raw.length, unique: unique.length, newItems: saved };
 }
 
-module.exports = { collectAll };
+
+async function translateUntranslatedContent() {
+  const items = db.prepare(`SELECT id, content FROM items WHERE lang != 'zh' AND content != '' AND length(content) > 50 AND content NOT LIKE '%ã€‚%' LIMIT 30`).all();
+  if (!items.length) return console.log('[Translate] No untranslated content');
+  console.log(`[Translate] Translating ${items.length} articles...`);
+  let count = 0;
+  for (const item of items) {
+    try {
+      const c = await translateToZh(item.content.slice(0, 800));
+      if (c && c.length > 10) {
+        const rest = item.content.length > 800 ? '\\n\\n' + item.content.slice(800) : '';
+        db.prepare('UPDATE items SET content = ? WHERE id = ?').run(c + rest, item.id);
+        count++;
+      }
+    } catch {}
+  }
+  console.log(`[Translate] Done: ${count}/${items.length} translated`);
+}
+
+module.exports = { collectAll, translateUntranslatedContent };

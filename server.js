@@ -1,8 +1,8 @@
-const express = require('express');
+﻿const express = require('express');
 const path = require('path');
 const cron = require('node-cron');
 const { db, stmts } = require('./db');
-const { collectAll } = require('./collector');
+const { collectAll, translateUntranslatedContent } = require('./collector');
 const http = require('http');
 const { WebSocketServer } = require('ws');
 
@@ -177,6 +177,7 @@ async function runCollect() {
 }
 
 cron.schedule('*/1 * * * *', () => { runCollect(); });
+cron.schedule('*/5 * * * *', () => { translateUntranslatedContent().catch(e => console.error('[Translate Cron]', e)); });
 
 
 // Reset curated status for items below new threshold
