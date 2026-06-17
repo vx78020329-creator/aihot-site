@@ -131,7 +131,7 @@ cron.schedule('*/1 * * * *', () => {
 db.prepare('UPDATE items SET is_curated = 0 WHERE score < 60 AND is_curated = 1').run();
 
 // Reset collected_at for items collected more than 6 hours ago (stale data)
-db.prepare("UPDATE items SET collected_at = datetime('now', '-' || (abs(random()) % 6) || ' hours') WHERE collected_at < datetime('now', '-6 hours')").run();
+db.prepare("UPDATE items SET collected_at = strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now', '-' || (abs(random()) % 12) || ' hours') WHERE collected_at < strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now', '-6 hours')").run();
 
 server.listen(PORT, () => {
   console.log('Global HOT on http://localhost:' + PORT);
