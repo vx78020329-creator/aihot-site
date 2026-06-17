@@ -61,6 +61,13 @@ app.get('/api/items/:id', limiter, (req, res) => {
   res.json({ item, related });
 });
 
+
+app.get('/api/last-update', (req, res) => {
+  const row = db.prepare("SELECT MAX(collected_at) as last FROM items").get();
+  const count = db.prepare("SELECT COUNT(*) as cnt FROM items WHERE collected_at > datetime('now', '-5 minutes')").get();
+  res.json({ lastUpdate: row.last || '', recentCount: count.cnt });
+});
+
 app.get('/api/hot', (req, res) => {
   res.json({ items: db.prepare('SELECT id,title,summary,source,category,published_at,score FROM items WHERE score>=60 ORDER BY score DESC LIMIT 20').all() });
 });

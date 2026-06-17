@@ -145,8 +145,20 @@
   window.__openItem=id=>{location.hash='#/item/'+id};
   window.__goPage=p=>{pageNum=p;loadList();$('#content-area').scrollTop=0};
 
+  
+  async function loadLastUpdate(){
+    try{
+      const d=await(await fetch('/api/last-update')).json();
+      const el=$('#last-update-info');
+      if(el&&d.lastUpdate){
+        const ago=timeAgo(d.lastUpdate);
+        el.textContent='Last updated: '+ago+' ('+d.recentCount+' new in 5min)';
+        el.style.display='';
+      }
+    }catch{}
+  }
   document.addEventListener('DOMContentLoaded',()=>{
-    initTheme();connectWS();loadStats();
+    initTheme();connectWS();loadStats();loadLastUpdate();
     window.addEventListener('hashchange',handleRoute);handleRoute();
     let timer;$('#search-input').addEventListener('input',e=>{clearTimeout(timer);timer=setTimeout(()=>{currentSearch=e.target.value.trim();pageNum=1;loadList()},400)});
     $('#detail-back').onclick=closeDetail;
@@ -164,7 +176,7 @@
       setTimeout(()=>{loadList();loadStats()},12000);
     };
     setInterval(()=>{loadList()},60000);
-    setInterval(loadStats,60000);
+    setInterval(loadStats,60000); setInterval(loadLastUpdate,30000);
     document.addEventListener('visibilitychange',()=>{if(!document.hidden){loadList();loadStats()}});
   });
 })();

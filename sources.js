@@ -44,4 +44,13 @@ module.exports = [
   { name: 'CNBC Tech', type: 'rss', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910', category: '商业', lang: 'en' },
   { name: 'NYT Tech', type: 'rss', url: 'https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml', category: '科技', lang: 'en' },
   { name: 'Yahoo Tech', type: 'rss', url: 'https://www.yahoo.com/news/rss/tech', category: '科技', lang: 'en' },
+  { name: 'ZDNet', type: 'rss', url: 'https://www.zdnet.com/news/rss.xml', category: 'tech', lang: 'en' },
+  { name: 'Slashdot', type: 'rss', url: 'http://rss.slashdot.org/Slashdot/slashdotMain', category: 'dev', lang: 'en' },
+  { name: 'Register', type: 'rss', url: 'https://www.theregister.com/headlines.atom', category: 'tech', lang: 'en' },
+  { name: 'TechRepublic', type: 'rss', url: 'https://www.techrepublic.com/rssfeeds/articles/', category: 'tech', lang: 'en' },
+  { name: 'Space.com', type: 'rss', url: 'https://www.space.com/feeds/all', category: 'science', lang: 'en' },
+  { name: 'LiveScience', type: 'rss', url: 'https://www.livescience.com/feeds/all', category: 'science', lang: 'en' },
+  { name: 'TechCrunch Biz', type: 'rss', url: 'https://techcrunch.com/category/business/feed/', category: 'biz', lang: 'en' },
+  { name: 'Ars Biz', type: 'rss', url: 'https://feeds.arstechnica.com/arstechnica/business-lab', category: 'biz', lang: 'en' },
+  { name: 'AI News', type: 'rss', url: 'https://www.artificialintelligence-news.com/feed/', category: 'ai', lang: 'en' },
 ];
