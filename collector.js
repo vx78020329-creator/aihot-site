@@ -220,8 +220,11 @@ async function collectAll() {
       try { const t = await translateToZh(item.title); if (t && t !== item.title) item.title = t; } catch {}
       try { if (item.summary) { const s = await translateToZh(item.summary); if (s && s !== item.summary) item.summary = s; } } catch {}
     }
+    item.score = item.score || scoreItem(item);
+    item.collected_at = new Date().toISOString();
     item.tags = '[]';
-    try { const r = stmts.insertItem.run(item); if (r.changes > 0) saved.push(item); } catch {}
+    if (i < 3) console.log('[DEBUG] Item', i, 'link:', item.link?.substring(0,50), 'title:', item.title?.substring(0,30));
+    try { const r = stmts.insertItem.run(item); if (i < 3) console.log('[DEBUG] Insert result:', r.changes); if (r.changes > 0) saved.push(item); } catch(e) { if (i < 3) console.log('[DEBUG] Insert error:', e.message); }
   }
 
   db.prepare('UPDATE items SET is_curated = 1 WHERE score >= 60 AND is_curated = 0').run();
