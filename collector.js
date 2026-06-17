@@ -1,4 +1,4 @@
-ï»¿const RSSParser = require('rss-parser');
+const RSSParser = require('rss-parser');
 const cheerio = require('cheerio');
 const { db, stmts } = require('./db');
 const sources = require('./sources');
@@ -34,12 +34,12 @@ function scoreItem(item) {
   if (item.summary && item.summary.length > 100) s += 5;
   if (item.image_url) s += 5;
   if (item.category === 'AI') s += 5;
-  else if (item.category === 'ä¸–ç•Œ') s += 5;
-  else if (item.category === 'ç§‘å­¦') s += 3;
+  else if (item.category === 'ÊÀ½ç') s += 5;
+  else if (item.category === '¿ÆÑ§') s += 3;
   return Math.min(95, s);
 }
 
-// â”€â”€ å…¨æ–‡æŠ“å– â”€â”€
+// ©¤©¤ È«ÎÄ×¥È¡ ©¤©¤
 async function fetchFullContent(url) {
   if (!url) return { content: '', image: '' };
   try {
@@ -74,14 +74,14 @@ async function fetchFullContent(url) {
   } catch { return { content: '', image: '' }; }
 }
 
-// â”€â”€ ç¿»è¯‘ â”€â”€
+// ©¤©¤ ·­Òë ©¤©¤
 let failCount = 0;
 async function translateToZh(text) {
   if (!text || text.length < 3) return text;
   if (failCount >= 5) return text;
   // Google Translate unofficial
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q=${encodeURIComponent(text.slice(0, 300))}`;
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=${encodeURIComponent(text.slice(0, 300))}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
     const data = await res.json();
     if (data?.[0]) { const t = data[0].map(s => s[0]).join(''); if (t) { failCount = 0; return t; } }
@@ -99,7 +99,7 @@ async function translateToZh(text) {
   return text;
 }
 
-// â”€â”€ RSS â”€â”€
+// ©¤©¤ RSS ©¤©¤
 async function collectRSS(src) {
   const items = [];
   try {
@@ -117,7 +117,7 @@ async function collectRSS(src) {
   return items;
 }
 
-// â”€â”€ Hacker News â”€â”€
+// ©¤©¤ Hacker News ©¤©¤
 async function collectHN(src) {
   const items = [];
   try {
@@ -141,7 +141,7 @@ async function collectHN(src) {
   return items;
 }
 
-// â”€â”€ Reddit (æ”¹ç”¨ RSS feed) â”€â”€
+// ©¤©¤ Reddit (¸ÄÓÃ RSS feed) ©¤©¤
 async function collectReddit(src) {
   const items = [];
   try {
@@ -168,7 +168,7 @@ async function collectReddit(src) {
   return items;
 }
 
-// â”€â”€ ä¸»é‡‡é›†æµç¨‹ â”€â”€
+// ©¤©¤ Ö÷²É¼¯Á÷³Ì ©¤©¤
 async function collectAll() {
   console.log(`[Collector] Starting at ${new Date().toISOString()}`);
   failCount = 0;
@@ -184,7 +184,7 @@ async function collectAll() {
   }
   console.log(`[Collector] Raw: ${raw.length}`);
 
-  // å»é‡
+  // È¥ÖØ
   const seen = new Map();
   const unique = [];
   for (const item of raw) {
@@ -196,7 +196,7 @@ async function collectAll() {
   }
   console.log(`[Collector] Unique: ${unique.length}`);
 
-  // è¿‡æ»¤å·²æœ‰
+  // ¹ıÂËÒÑÓĞ
   const newItems = [];
   for (const item of unique) {
     if (item.link) {
@@ -207,18 +207,22 @@ async function collectAll() {
   }
   console.log(`[Collector] New: ${newItems.length}`);
 
-  // æŠ“å–å…¨æ–‡ + ç¿»è¯‘ï¼ˆæé«˜ä¸Šé™åˆ° 120ï¼‰
+  // ×¥È¡È«ÎÄ + ·­Òë£¨Ìá¸ßÉÏÏŞµ½ 120£©
   const saved = [];
   for (let i = 0; i < newItems.length && i < 200; i++) {
     const item = newItems[i];
-    // å¹¶è¡ŒæŠ“å–å…¨æ–‡
+    // ²¢ĞĞ×¥È¡È«ÎÄ
     const { content, image } = await fetchFullContent(item.link);
     item.content = content;
     item.image_url = image || '';
-    // ç¿»è¯‘ï¼ˆåªç¿»è¯‘æ ‡é¢˜ï¼ŒèŠ‚çœé¢åº¦ï¼‰
-    if (item.lang === 'en') {
+    // ·­ÒëËùÓĞ·ÇÖĞÎÄÄÚÈİ£¨±êÌâ+ÕªÒª£©
+    if (item.lang && item.lang !== 'zh') {
       const t = await translateToZh(item.title);
-      if (t !== item.title) item.title = t;
+      if (t && t !== item.title) item.title = t;
+      if (item.summary) {
+        const s = await translateToZh(item.summary);
+        if (s && s !== item.summary) item.summary = s;
+      }
     }
     item.score = item.score || scoreItem(item);
     item.collected_at = new Date().toISOString();
