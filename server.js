@@ -19,6 +19,13 @@ app.use((req, res, next) => {
   next();
 });
 
+// Ensure UTF-8 charset on all responses
+app.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
+
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
 
