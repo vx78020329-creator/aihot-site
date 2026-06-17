@@ -27,6 +27,13 @@ app.use('/api', (req, res, next) => {
 
 
 app.use(express.json());
+// Serve index.html with no-cache to prevent stale Content-Type in WeChat/WebView
+app.get('/', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
 
 const rateLimit = {};
