@@ -24,15 +24,19 @@ function similar(a, b) {
   return m / s > 0.75;
 }
 function scoreItem(item) {
-  let s = 30;
+  let s = 20;
   if (item.title && item.title.length > 10) s += 5;
   if (item.title && item.title.length > 30) s += 5;
-  if (item.content && item.content.length > 500) s += 15;
+  if (item.content && item.content.length > 1000) s += 20;
+  else if (item.content && item.content.length > 500) s += 15;
   else if (item.content && item.content.length > 200) s += 10;
+  else if (item.content && item.content.length > 50) s += 5;
   if (item.summary && item.summary.length > 100) s += 5;
-  if (item.category === 'AI') s += 3;
-  if (item.category === '世界') s += 3;
-  return Math.min(100, s);
+  if (item.image_url) s += 5;
+  if (item.category === 'AI') s += 5;
+  else if (item.category === '世界') s += 5;
+  else if (item.category === '科学') s += 3;
+  return Math.min(95, s);
 }
 
 // ── 全文抓取 ──
@@ -129,7 +133,7 @@ async function collectHN(src) {
           title: s.title.trim(), summary: s.text ? truncate(stripHtml(s.text), 300) : '',
           source: 'Hacker News', category: src.category, lang: 'en',
           published_at: new Date(s.time * 1000).toISOString(),
-          score: Math.min(100, Math.floor(Math.log2(s.score || 1) * 8)),
+          score: Math.min(95, Math.floor(20 + Math.log2(s.score || 1) * 10)),
         });
       } catch {}
     }
@@ -157,7 +161,7 @@ async function collectReddit(src) {
         title: p.title.trim(), summary: truncate(stripHtml(p.selftext || ''), 300),
         source: `Reddit r/${src.subreddit}`, category: src.category, lang: 'en',
         published_at: new Date(p.created_utc * 1000).toISOString(),
-        score: Math.min(100, Math.floor(Math.log2(p.score || 1) * 12)),
+        score: Math.min(95, Math.floor(20 + Math.log2(p.score || 1) * 12)),
       });
     }
   } catch (e) { console.error(`[Reddit] r/${src.subreddit}: ${e.message}`); }
