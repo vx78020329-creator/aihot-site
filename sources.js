@@ -41,4 +41,7 @@ module.exports = [
   { name: '36氪',             type: 'rss', url: 'https://36kr.com/feed',                             category: '商业', lang: 'zh' },
   { name: '少数派',           type: 'rss', url: 'https://sspai.com/feed',                             category: '科技', lang: 'zh' },
   { name: 'IT之家',           type: 'rss', url: 'https://www.ithome.com/rss/',                        category: '科技', lang: 'zh' },
+  { name: 'CNBC Tech', type: 'rss', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910', category: '商业', lang: 'en' },
+  { name: 'NYT Tech', type: 'rss', url: 'https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml', category: '科技', lang: 'en' },
+  { name: 'Yahoo Tech', type: 'rss', url: 'https://www.yahoo.com/news/rss/tech', category: '科技', lang: 'en' },
 ];

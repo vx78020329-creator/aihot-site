@@ -115,7 +115,7 @@ wss.on('connection', ws => {
 });
 global._wss = wss;
 
-cron.schedule('*/5 * * * *', () => {
+cron.schedule('*/1 * * * *', () => {
   console.log('[Cron] Collecting...');
   collectAll().then(r => {
     if (r && r.newItems && r.newItems.length > 0) {
