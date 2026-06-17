@@ -225,7 +225,7 @@ async function collectAll() {
     try { const r = stmts.insertItem.run(item); if (r.changes > 0) saved.push(item); } catch {}
   }
 
-  db.prepare('UPDATE items SET is_curated = 1 WHERE score >= 65 AND is_curated = 0').run();
+  db.prepare('UPDATE items SET is_curated = 1 WHERE score >= 60 AND is_curated = 0').run();
   console.log(`[Collector] Saved: ${saved.length}`);
   return { total: raw.length, unique: unique.length, newItems: saved };
 }

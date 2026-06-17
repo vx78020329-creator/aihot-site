@@ -128,7 +128,7 @@ cron.schedule('*/5 * * * *', () => {
 
 
 // Reset curated status for items below new threshold
-db.prepare('UPDATE items SET is_curated = 0 WHERE score < 65 AND is_curated = 1').run();
+db.prepare('UPDATE items SET is_curated = 0 WHERE score < 60 AND is_curated = 1').run();
 
 server.listen(PORT, () => {
   console.log('Global HOT on http://localhost:' + PORT);
