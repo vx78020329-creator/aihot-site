@@ -88,7 +88,7 @@ async function translateToZh(text) {
   } catch {}
   // MyMemory fallback
   try {
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 450))}&langpair=en|zh-CN`;
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 450))}&langpair=auto|zh-CN`;
     const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
     const data = await res.json();
     if (data.responseStatus === 200 && data.responseData?.translatedText && !data.responseData.translatedText.includes('WARNING')) {
