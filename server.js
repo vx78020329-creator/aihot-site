@@ -102,7 +102,7 @@ app.get('/feed/all.xml', (req, res) => {
   res.type('application/rss+xml').send(buildRSS('Global Hot - All','All', db.prepare('SELECT * FROM items ORDER BY published_at DESC LIMIT 100').all()));
 });
 app.get('/feed/daily.xml', (req, res) => {
-  res.type('application/rss+xml').send(buildRSS('Global Hot - Daily','Daily', db.prepare("SELECT * FROM items WHERE collected_at>=date('now') ORDER BY score DESC LIMIT 50").all()));
+  res.type('application/rss+xml').send(buildRSS('Global Hot - Daily','Daily', db.prepare("SELECT * FROM items WHERE collected_at>=datetime('now', '-1 day') ORDER BY score DESC LIMIT 50").all()));
 });
 
 app.use((req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
@@ -131,7 +131,7 @@ cron.schedule('*/1 * * * *', () => {
 db.prepare('UPDATE items SET is_curated = 0 WHERE score < 60 AND is_curated = 1').run();
 
 // Reset collected_at for items collected more than 6 hours ago (stale data)
-db.prepare("UPDATE items SET collected_at = strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now', '-' || (abs(random()) % 12) || ' hours') WHERE collected_at < strftime('%Y-%m-%dT%H:%M:%S.000Z', 'now', '-6 hours')").run();
+db.prepare("UPDATE items SET collected_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-' || (abs(random()) % 12) || ' hours') WHERE collected_at < strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-6 hours')").run();
 
 server.listen(PORT, () => {
   console.log('Global HOT on http://localhost:' + PORT);

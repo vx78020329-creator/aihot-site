@@ -221,6 +221,7 @@ async function collectAll() {
       if (t !== item.title) item.title = t;
     }
     item.score = item.score || scoreItem(item);
+    item.collected_at = new Date().toISOString();
     item.tags = '[]';
     try { const r = stmts.insertItem.run(item); if (r.changes > 0) saved.push(item); } catch {}
   }

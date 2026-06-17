@@ -18,7 +18,7 @@ db.exec(`
     lang        TEXT DEFAULT 'en',
     image_url   TEXT DEFAULT '',
     published_at TEXT DEFAULT '',
-    collected_at TEXT DEFAULT (datetime('now')),
+    collected_at TEXT DEFAULT '',
     score       INTEGER DEFAULT 0,
     is_curated  INTEGER DEFAULT 0,
     reason      TEXT DEFAULT '',
