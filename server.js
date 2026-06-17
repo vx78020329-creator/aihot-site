@@ -111,6 +111,12 @@ function buildRSS(title, desc, items) {
   return xml + '</channel>\n</rss>';
 }
 
+
+// Health check endpoint for keep-alive services
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime(), time: new Date().toISOString(), items: stmts.countItems.get().cnt, collecting: isCollecting, lastCollect: lastCollectTime || '' });
+});
+
 app.get('/api/trending', (req, res) => {
   const items = db.prepare('SELECT id, title, summary, source, category, published_at, collected_at, score, image_url FROM items WHERE score >= 50 ORDER BY score DESC, collected_at DESC LIMIT 30').all();
   res.json({ items, serverTime: new Date().toISOString() });
@@ -171,6 +177,16 @@ db.prepare('UPDATE items SET is_curated = 0 WHERE score < 60 AND is_curated = 1'
 
 // Reset collected_at for items collected more than 6 hours ago (stale data)
 // [FIXED] Removed random timestamp rewriting - was causing "8h ago" for all items
+
+
+// Self-ping to prevent Railway free tier from sleeping
+if (process.env.RAILWAY_STATIC_URL || process.env.PORT) {
+  const SELF_URL = process.env.RAILWAY_STATIC_URL || 'http://localhost:' + (process.env.PORT || 3456);
+  setInterval(() => {
+    fetch(SELF_URL + '/api/health').catch(() => {});
+  }, 5 * 60 * 1000); // every 5 minutes
+  console.log('[KeepAlive] Self-ping enabled: ' + SELF_URL);
+}
 
 server.listen(PORT, () => {
   console.log('Global HOT on http://localhost:' + PORT);

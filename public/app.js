@@ -277,7 +277,7 @@
     };
     
     // Auto-refresh: poll every 30s for new data
-    setInterval(()=>{loadList()},30000);
+    setInterval(()=>{loadList()},15000);
     setInterval(loadStats,60000);
     // Last update indicator refreshes every 10s
     setInterval(loadLastUpdate,10000);
