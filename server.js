@@ -2,7 +2,7 @@
 const path = require('path');
 const cron = require('node-cron');
 const { db, stmts } = require('./db');
-const { collectAll, translateUntranslatedContent } = require('./collector');
+const { collectAll, translateUntranslatedContent, isChinese } = require('./collector');
 const http = require('http');
 const { WebSocketServer } = require('ws');
 
@@ -36,6 +36,47 @@ app.get('/', (req, res) => {
 });
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
 
+
+// Generate summary + impact analysis from article content
+function generateSummaryAndImpact(item) {
+  const content = item.content || item.summary || '';
+  const title = item.title || '';
+  
+  // Extract summary: first 2-3 meaningful sentences
+  const sentences = content.split(/[。！？.!?]+/).filter(s => s.trim().length > 10);
+  const summary = sentences.slice(0, 3).join('。').trim() + (sentences.length > 3 ? '...' : '');
+  
+  // Generate impact based on category and keywords
+  const impacts = {
+    '科技': '该技术进展可能改变行业格局，影响相关产业链发展方向。',
+    'AI': '人工智能领域的突破将加速各行业智能化转型，带来效率提升和新应用场景。',
+    '商业': '商业动态反映市场趋势变化，可能影响投资决策和竞争格局。',
+    '科学': '科学研究成果推动人类认知边界扩展，为技术应用奠定理论基础。',
+    '世界': '国际事件影响全球政治经济格局，值得持续关注。',
+    '开发': '开发者工具和框架的更新将影响技术选型和开发效率。',
+    '产品': '产品创新推动用户体验升级，可能引领行业新方向。'
+  };
+  
+  // Detect specific impact keywords
+  const impactKeywords = {
+    '突破': '这一突破性进展将推动相关领域快速发展。',
+    '威胁': '需要关注潜在风险，行业应提前做好应对准备。',
+    '合作': '合作趋势表明行业正在走向融合，有利于生态建设。',
+    '增长': '增长态势强劲，市场前景看好。',
+    '下降': '市场出现调整信号，需谨慎评估风险。'
+  };
+  
+  let impact = impacts[item.category] || '该资讯反映了行业最新动态，值得深入了解。';
+  for (const [keyword, impactText] of Object.entries(impactKeywords)) {
+    if (title.includes(keyword) || content.includes(keyword)) {
+      impact = impactText;
+      break;
+    }
+  }
+  
+  return { summary: summary.substring(0, 200), impact };
+}
+
 const rateLimit = {};
 function limiter(req, res, next) {
   const ip = req.ip || req.connection.remoteAddress;
@@ -64,16 +105,39 @@ app.get('/api/items', limiter, (req, res) => {
   res.json({ items, total, page: p, limit: l, pages: Math.ceil(total / l) });
 });
 
-app.get('/api/items/:id', limiter, (req, res) => {
-  const id = parseInt(req.params.id);
-  if (!id || id < 1) return res.status(400).json({ error: 'invalid id' });
-  const item = stmts.getById.get(id);
-  if (!item) return res.status(404).json({ error: 'Not found' });
-  const related = db.prepare(
-    'SELECT id, title, source, published_at FROM items WHERE id != ? AND category = ? ORDER BY published_at DESC LIMIT 10'
-  ).all(item.id, item.category);
-  res.json({ item, related });
-});
+app.get('/api/items/:id', limiter, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (!id || id < 1) return res.status(400).json({ error: 'invalid id' });
+    const item = stmts.getById.get(id);
+    if (!item) return res.status(404).json({ error: 'Not found' });
+    // On-demand translate English content to Chinese (Railway server can access Google)
+    if (item.lang && item.lang !== 'zh' && item.content && item.content.length > 20 && !isChinese(item.content.slice(0, 500))) {
+      try {
+        const { translateToZh } = require('./collector');
+        // Split content into paragraphs and translate in batches
+        const paragraphs = item.content.split(/\n{2,}/);
+        const translatedParts = [];
+        for (let pi = 0; pi < paragraphs.length; pi += 3) {
+          const batch = paragraphs.slice(pi, pi + 3).join('\n\n');
+          if (batch.length < 5) { translatedParts.push(batch); continue; }
+          const t = await translateToZh(batch);
+          translatedParts.push(t || batch);
+        }
+        const newContent = translatedParts.join('\n\n');
+        if (newContent && newContent.length > 10) {
+          item.content = newContent;
+          try { db.prepare('UPDATE items SET content = ? WHERE id = ?').run(item.content, id); } catch {}
+        }
+      } catch (e) { console.error('[API Translate]', e.message); }
+    }
+    const related = db.prepare(
+      'SELECT id, title, source, published_at FROM items WHERE id != ? AND category = ? ORDER BY published_at DESC LIMIT 10'
+    ).all(item.id, item.category);
+    const { summary, impact } = generateSummaryAndImpact(item);
+      item.summary_analysis = summary;
+      item.impact = impact;
+      res.json({ item, related });
+    });
 
 
 app.get('/api/last-update', (req, res) => {
@@ -176,7 +240,7 @@ async function runCollect() {
   isCollecting = false;
 }
 
-cron.schedule('*/1 * * * *', () => { runCollect(); });
+cron.schedule('*/2 * * * *', () => { runCollect(); });
 cron.schedule('*/5 * * * *', () => { translateUntranslatedContent().catch(e => console.error('[Translate Cron]', e)); });
 
 

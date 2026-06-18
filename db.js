@@ -48,7 +48,7 @@ const stmts = {
   `),
   getById: db.prepare('SELECT * FROM items WHERE id = ?'),
   countItems: db.prepare('SELECT COUNT(*) as cnt FROM items'),
-  countToday: db.prepare("SELECT COUNT(*) as cnt FROM items WHERE collected_at >= date('now')"),
+  countToday: db.prepare("SELECT COUNT(*) as cnt FROM items WHERE collected_at >= datetime('now', 'start of day', '-8 hours')"),
 };
 
 // 初始化源表

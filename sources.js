@@ -7,13 +7,13 @@ module.exports = [
   { name: 'Wired', type: 'rss', url: 'https://www.wired.com/feed/rss', category: '科技', lang: 'en' },
   { name: 'Engadget', type: 'rss', url: 'https://www.engadget.com/rss.xml', category: '科技', lang: 'en' },
   { name: 'Gizmodo', type: 'rss', url: 'https://gizmodo.com/feed', category: '科技', lang: 'en' },
-  { name: 'DigitalTrends', type: 'rss', url: 'https://www.digitaltrends.com/feed/', category: '科技', lang: 'en' },
+  { name: 'CNET', type: 'rss', url: 'https://www.cnet.com/rss/news/', category: '科技', lang: 'en' },
   { name: 'BBC Tech', type: 'rss', url: 'https://feeds.bbci.co.uk/news/technology/rss.xml', category: '科技', lang: 'en' },
   { name: 'NYT Tech', type: 'rss', url: 'https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml', category: '科技', lang: 'en' },
   { name: 'ZDNet', type: 'rss', url: 'https://www.zdnet.com/news/rss.xml', category: '科技', lang: 'en' },
   { name: 'Register', type: 'rss', url: 'https://www.theregister.com/headlines.atom', category: '科技', lang: 'en' },
-  { name: 'Yahoo Tech', type: 'rss', url: 'https://www.yahoo.com/news/rss/tech', category: '科技', lang: 'en' },
-  { name: 'Mashable', type: 'rss', url: 'https://mashable.com/feeds/rss', category: '科技', lang: 'en' },
+  { name: 'The Register', type: 'rss', url: 'https://www.theregister.com/headlines.atom', category: '科技', lang: 'en' },
+  { name: 'Toms Guide', type: 'rss', url: 'https://www.tomsguide.com/feeds/all', category: '科技', lang: 'en' },
   { name: 'TNW', type: 'rss', url: 'https://thenextweb.com/feed', category: '科技', lang: 'en' },
   { name: 'TechRepublic', type: 'rss', url: 'https://www.techrepublic.com/rssfeeds/articles/', category: '科技', lang: 'en' },
   // ── AI ──
@@ -22,7 +22,7 @@ module.exports = [
   { name: 'Google AI Blog', type: 'rss', url: 'https://blog.google/technology/ai/rss/', category: 'AI', lang: 'en' },
   { name: 'HuggingFace', type: 'rss', url: 'https://huggingface.co/blog/feed.xml', category: 'AI', lang: 'en' },
   { name: 'VentureBeat AI', type: 'rss', url: 'https://venturebeat.com/category/ai/feed/', category: 'AI', lang: 'en' },
-  { name: 'AI News', type: 'rss', url: 'https://www.artificialintelligence-news.com/feed/', category: 'AI', lang: 'en' },
+  { name: 'Analytics India', type: 'rss', url: 'https://analyticsindiamag.com/feed/', category: 'AI', lang: 'en' },
   // ── 世界 ──
   { name: 'BBC World', type: 'rss', url: 'https://feeds.bbci.co.uk/news/world/rss.xml', category: '世界', lang: 'en' },
   { name: 'NPR News', type: 'rss', url: 'https://feeds.npr.org/1001/rss.xml', category: '世界', lang: 'en' },
@@ -31,7 +31,7 @@ module.exports = [
   // ── 科学 ──
   { name: 'Nature News', type: 'rss', url: 'https://www.nature.com/nature.rss', category: '科学', lang: 'en' },
   { name: 'Science Daily', type: 'rss', url: 'https://www.sciencedaily.com/rss/all.xml', category: '科学', lang: 'en' },
-  { name: 'Phys.org', type: 'rss', url: 'https://phys.org/rss-feed/', category: '科学', lang: 'en' },
+  { name: 'New Scientist', type: 'rss', url: 'https://www.newscientist.com/feed/home/', category: '科学', lang: 'en' },
   { name: 'Space.com', type: 'rss', url: 'https://www.space.com/feeds/all', category: '科学', lang: 'en' },
   { name: 'LiveScience', type: 'rss', url: 'https://www.livescience.com/feeds/all', category: '科学', lang: 'en' },
   // ── 开发 ──
@@ -55,4 +55,26 @@ module.exports = [
   { name: 'Reddit r/technology', type: 'reddit', subreddit: 'technology', url: '', category: '科技', lang: 'en' },
   { name: 'Reddit r/science', type: 'reddit', subreddit: 'science', url: '', category: '科学', lang: 'en' },
   { name: 'Reddit r/artificial', type: 'reddit', subreddit: 'artificial', url: '', category: 'AI', lang: 'en' },
+  // === NEW HIGH-FREQUENCY SOURCES ===
+  { name: 'CNN Tech', type: 'rss', url: 'https://rss.cnn.com/rss/edition_technology.rss', category: '科技', lang: 'en' },
+  { name: 'Reuters Tech', type: 'rss', url: 'https://www.reutersagency.com/feed/?best-topics=tech', category: '科技', lang: 'en' },
+  { name: 'BleepingComputer', type: 'rss', url: 'https://www.bleepingcomputer.com/feed/', category: '科技', lang: 'en' },
+  { name: 'TechSpot', type: 'rss', url: 'https://www.techspot.com/backend/rss', category: '科技', lang: 'en' },
+  { name: 'MacRumors', type: 'rss', url: 'https://feeds.macrumors.com/MacRumors-All', category: '科技', lang: 'en' },
+  { name: '9to5Mac', type: 'rss', url: 'https://9to5mac.com/feed/', category: '科技', lang: 'en' },
+  { name: 'Android Authority', type: 'rss', url: 'https://www.androidauthority.com/feed/', category: '科技', lang: 'en' },
+  { name: 'TechCrunch AI', type: 'rss', url: 'https://techcrunch.com/category/artificial-intelligence/feed/', category: 'AI', lang: 'en' },
+  { name: 'The Decoder', type: 'rss', url: 'https://the-decoder.com/feed/', category: 'AI', lang: 'en' },
+  { name: 'Ars Technica Science', type: 'rss', url: 'https://feeds.arstechnica.com/arstechnica/science', category: '科学', lang: 'en' },
+  { name: 'Scientific American', type: 'rss', url: 'https://www.scientificamerican.com/feed/rss/', category: '科学', lang: 'en' },
+  { name: 'Wired Science', type: 'rss', url: 'https://www.wired.com/feed/category/science/latest/rss', category: '科学', lang: 'en' },
+  { name: 'Reuters World', type: 'rss', url: 'https://www.reutersagency.com/feed/?best-topics=political-general', category: '世界', lang: 'en' },
+  { name: 'AP News', type: 'rss', url: 'https://rsshub.app/apnews/topics/apf-topnews', category: '世界', lang: 'en' },
+  { name: 'Hacker News Best', type: 'rss', url: 'https://hnrss.org/best', category: '开发', lang: 'en' },
+  { name: 'GitHub Trending', type: 'rss', url: 'https://rsshub.app/github/trending/daily/any', category: '开发', lang: 'en' },
+  { name: 'TechNode', type: 'rss', url: 'https://technode.com/feed/', category: '科技', lang: 'zh' },
+  { name: '极客公园', type: 'rss', url: 'https://www.geekpark.net/rss', category: '科技', lang: 'zh' },
+  { name: 'PingWest', type: 'rss', url: 'https://www.pingwest.com/feed', category: '科技', lang: 'zh' },
+  { name: '品玩', type: 'rss', url: 'https://www.pingwest.com/feed', category: '科技', lang: 'zh' }
+
 ];

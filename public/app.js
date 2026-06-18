@@ -1,4 +1,4 @@
-(function() {
+﻿(function() {
   'use strict';
   let currentPage='curated',currentCategory='',currentSearch='',pageNum=1,ws=null,wsRetryCount=0,sidebarOpen=false,lastServerCollect='';
   const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
@@ -22,6 +22,9 @@
   function scls(s){return s>=70?'score-high':s>=50?'score-mid':'score-low'}
   function esc(s){return s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}
   function toHtml(c){if(!c)return'<p style="color:var(--text-3)">暂无内容</p>';return c.split(/\n{2,}/).filter(p=>p.trim()).map(p=>'<p>'+esc(p.trim())+'</p>').join('')}
+
+  // Auto-translate English content to Chinese on the client side
+
 
   // ���� Sidebar ����
   function openSidebar(){sidebarOpen=true;$('#sidebar').classList.add('open');$('#sidebar-overlay').classList.add('show');document.body.style.overflow='hidden'}
@@ -151,9 +154,13 @@
       if(i.collected_at)h+='<span> | </span><span>采集: '+new Date(i.collected_at).toLocaleString('zh-CN')+'</span>';
       h+='<span> | </span><span>'+esc(i.source)+'</span></div>';
       if(i.image_url)h+='<img class="detail-image" src="'+esc(i.image_url)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'" />';
+      if(i.summary_analysis){h+='<div class="detail-summary"><div class="detail-summary-label">\u{1F4DD} \u8D44\u8BAF\u6458\u8981</div><p>'+esc(i.summary_analysis)+'</p></div>';}
+      if(i.impact){h+='<div class="detail-impact"><div class="detail-impact-label">\u{1F4CA} \u5F71\u54CD\u5206\u6790</div><p>'+esc(i.impact)+'</p></div>';}
       h+='<div class="detail-content">'+toHtml(i.content||i.summary)+'</div>';
       if(rel.length>0){h+='<div class="detail-related"><div class="detail-related-title">相关报道</div>';rel.forEach(r=>{h+='<div class="related-item" onclick="window.__openItem('+r.id+')"><span class="related-item-title">'+esc(r.title)+'</span><span class="related-item-meta">'+esc(r.source)+'</span></div>'});h+='</div>'}
       bd.innerHTML=h;
+      // Auto-translate English content
+      const contentEl = bd.querySelector('.detail-content');
     }catch{bd.innerHTML='<div class="empty-state"><p>加载失败</p></div>'}
   }
   function closeDetail(){$('#detail-overlay').classList.remove('open');document.body.style.overflow='';if(location.hash.startsWith('#/item/'))history.back()}
@@ -277,7 +284,7 @@
     };
     
     // Auto-refresh: poll every 30s for new data
-    setInterval(()=>{loadList()},15000);
+    // Auto-refresh disabled to prevent flickering - use visibility change + manual refresh instead
     setInterval(loadStats,60000);
     // Last update indicator refreshes every 10s
     setInterval(loadLastUpdate,10000);
