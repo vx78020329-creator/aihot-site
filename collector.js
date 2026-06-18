@@ -330,5 +330,3 @@ async function translateUntranslatedContent() {
 }
 
 module.exports = { collectAll, translateUntranslatedContent, translateToZh, isChinese };
-    // Mark as Chinese after translation
-    if (item.lang !== 'zh') item.lang = 'zh';
